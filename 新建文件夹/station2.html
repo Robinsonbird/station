@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>智慧车站系统 | 全线路增强版</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', '微软雅黑', system-ui, sans-serif;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #071a2b; }
+::-webkit-scrollbar-thumb { background: #00a6ff; border-radius: 8px; }
+body { min-height: 100vh; background: #030e1a; transition: all 0.2s; }
+body.elder { font-size: 1.25rem; }
+body.elder .card p, body.elder .result, body.elder .box { font-size: 1.1rem; }
+body.elder .screen-header, body.elder .screen-row { font-size: 1.2rem; }
+
+/* 登录页面 */
+#loginPage {
+    width: 100%; height: 100vh;
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,20,40,0.85)), 
+                url('images/login-bg.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+    display: flex; justify-content: center; align-items: center;
+}
+.login-box {
+    width: 440px; padding: 45px 35px; border-radius: 32px;
+    background: rgba(5,15,30,0.92); backdrop-filter: blur(14px);
+    border: 1px solid rgba(0,200,255,0.6);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 25px rgba(0,180,255,0.3);
+}
+.login-box h1 { text-align: center; font-size: 32px; margin-bottom: 12px; color: #b3f0ff; text-shadow: 0 0 5px #0088aa; }
+.login-box p { text-align: center; color: #e0f0ff; margin-bottom: 30px; font-weight: 500; }
+.login-box input {
+    width: 100%; margin: 12px 0; padding: 14px 18px; border-radius: 40px;
+    background: #0f263f; color: white; border: 1px solid #2c6e9e;
+}
+.login-box button {
+    width: 100%; padding: 14px; margin-top: 20px; border-radius: 40px;
+    background: linear-gradient(95deg,#0099ff,#00dcff); font-weight: bold; font-size: 18px;
+    color: white; text-shadow: 0 1px 1px black; cursor: pointer;
+}
+.login-msg { margin-top: 18px; text-align: center; color: #ffb3a0; font-weight: bold; }
+
+/* 主系统背景 */
+#mainSystem {
+    display: none; position: relative;
+    background: url('images/main-bg.jpg') center/cover fixed no-repeat;
+}
+#mainSystem::before {
+    content: ""; position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(3,12,22,0.85); backdrop-filter: blur(2px); pointer-events: none; z-index:0;
+}
+#mainSystem > * { position: relative; z-index:2; }
+
+.hero {
+    height: 320px;
+    background: linear-gradient(105deg,rgba(0,0,0,0.6),rgba(0,20,45,0.75)),
+                url('images/hero-bg.jpg') center/cover no-repeat;
+    border-bottom: 2px solid #00ccff;
+}
+.hero-content { position: absolute; left: 50px; bottom: 30px; text-shadow: 2px 2px 10px black; }
+.hero-content h1 { 
+    font-size: 52px; 
+    color: #ffffff;  /* 纯白色，不要蓝色渐变 */
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    font-weight: bold;
+}
+.hero-content p { color: #f0fcff; font-size: 22px; font-weight: 500; margin-top: 8px; text-shadow: 0 0 5px #00aaff; }
+.time-box { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); color: #ffffcc; padding: 10px 18px; border-radius: 40px; margin-top: 15px; display: inline-block; }
+
+.grid {
+    width: 94%; margin: 35px auto;
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 26px;
+}
+.card {
+    background: rgba(8,20,38,0.92); backdrop-filter: blur(4px);
+    border: 1px solid rgba(0,180,255,0.5);
+    border-radius: 28px; padding: 28px 16px;
+    text-align: center; cursor: pointer; transition: 0.25s;
+}
+.card:hover { transform: translateY(-10px); background: rgba(20,55,90,0.98); border-color: #00ddff; box-shadow: 0 15px 30px rgba(0,170,255,0.4); }
+.card i { font-size: 48px; color: #6ad4ff; filter: drop-shadow(0 0 4px #0088aa); }
+.card h3 { font-size: 26px; margin: 12px 0 8px; color: #ffffff; text-shadow: 0 1px 2px black; }
+.card p { color: #d4ecff; font-size: 16px; font-weight: 500; }
+
+.page {
+    width: 94%; margin: 20px auto 50px;
+    background: rgba(6,18,32,0.94); backdrop-filter: blur(4px);
+    border-radius: 32px; padding: 30px 35px;
+    border: 1px solid rgba(0,200,255,0.4);
+    display: none;
+}
+.page.active { display: block; animation: fadeSlide 0.35s ease; }
+@keyframes fadeSlide { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.page h2 { font-size: 34px; border-left: 6px solid #0af; padding-left: 20px; margin-bottom: 28px; color: #f0fcff; text-shadow: 0 2px 3px black; }
+.page-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.box { background: #0a1a2ccc; border-radius: 24px; padding: 22px; border: 1px solid #2c6e9e; backdrop-filter: blur(2px); }
+.box h3 { color: #aaffff; margin-bottom: 15px; font-size: 22px; text-shadow: 0 1px 2px black; }
+input, select { background: #0a192b; border: 1px solid #2a6f9a; padding: 12px 15px; border-radius: 18px; color: #fff; width: 100%; margin: 8px 0; }
+button {
+    background: linear-gradient(90deg,#0088ff,#00c3ff); border: none; border-radius: 40px;
+    padding: 12px 28px; font-weight: bold; cursor: pointer; color: white; text-shadow: 0 1px 1px black;
+}
+button:hover { transform: scale(0.98); box-shadow: 0 0 10px cyan; }
+.result {
+    background: #020c18cc; padding: 16px; border-radius: 20px; line-height: 1.7; margin-top: 12px;
+    color: #f2faff; font-weight: 500; border-left: 3px solid #0af;
+}
+.train-screen { background: #010a15; border-radius: 24px; overflow-x: auto; }
+.screen-header, .screen-row {
+    display: grid; grid-template-columns: 1fr 1.2fr 1fr 1fr 1.2fr;
+    padding: 16px 12px; text-align: center;
+}
+.screen-header { background: #04212f; color: #88ffff; font-weight: bold; font-size: 18px; }
+.screen-row { color: #eef5ff; font-weight: 500; border-top: 1px solid #1c527a; }
+.map { width: 100%; height: 360px; background: #071a28; border-radius: 28px; overflow: hidden; border: 2px solid #0af; }
+#guideCanvas { width: 100%; height: 100%; display: block; background: #0a1725; }
+.chart-container { margin-top: 20px; background: rgba(2,12,24,0.6); border-radius: 20px; padding: 15px; border: 1px solid #2c6e9e; }
+canvas#trafficChart { max-height: 280px; width: 100%; }
+@media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .page-grid{grid-template-columns:1fr;} .hero-content h1{font-size:36px;} }
+@media (max-width:620px){ .grid{grid-template-columns:1fr;} .hero{height:260px;} .hero-content{left:20px;} }
+</style>
+</head>
+<body id="body">
+<div id="loginPage">
+    <div class="login-box">
+        <h1><i class="fa-solid fa-train-subway"></i> 智慧车站 · 全景枢纽</h1>
+        <p>中铁12306 智能服务系统 | 全国高铁网已贯通</p>
+        <input type="text" id="username" placeholder="账号: admin">
+        <input type="password" id="password" placeholder="密码: 123456">
+        <button onclick="login()"><i class="fa-solid fa-key"></i> 登录系统</button>
+        <div class="login-msg" id="loginMsg"></div>
+    </div>
+</div>
+
+<div id="mainSystem">
+    <div class="hero">
+        <div class="hero-content">
+            <h1>🚄 智慧车站 3.0</h1>
+            <p>全场景数字枢纽 · 智享每一程 · 草原高铁新体验</p>
+            <div class="time-box" id="time"></div>
+        </div>
+    </div>
+    <div class="grid">
+        <div class="card" onclick="showPage('ticket')"><i class="fa-solid fa-ticket"></i><h3>车票查询</h3><p>余票 · 票价 · 时刻</p></div>
+        <div class="card" onclick="showPage('guide')"><i class="fa-solid fa-map-location-dot"></i><h3>智能引导</h3><p>真实地图+动态导航</p></div>
+        <div class="card" onclick="showPage('delay')"><i class="fa-solid fa-clock"></i><h3>正晚点查询</h3><p>实时运行状态</p></div>
+        <div class="card" onclick="showPage('reserve')"><i class="fa-solid fa-handshake-angle"></i><h3>服务预约</h3><p>轮椅/商务/行李</p></div>
+        <div class="card" onclick="showPage('traffic')"><i class="fa-solid fa-chart-column"></i><h3>人流统计</h3><p>区域热力预警</p></div>
+        <div class="card" onclick="showPage('screen')"><i class="fa-solid fa-tv"></i><h3>列车大屏</h3><p>动态发车信息</p></div>
+        <div class="card" onclick="toggleElder()"><i class="fa-solid fa-universal-access"></i><h3>敬老模式</h3><p>大字体关怀</p></div>
+        <div class="card" onclick="voiceBroadcast()"><i class="fa-solid fa-volume-high"></i><h3>语音播报</h3><p>实时车站广播</p></div>
+    </div>
+
+    <!-- 车票查询 - 包含全国主要城市 -->
+    <div id="ticket" class="page">
+        <h2>🎫 智能票务</h2>
+        <div class="page-grid">
+            <div class="box">
+                <h3>行程查询</h3>
+                <input id="from" placeholder="出发地 (北京/上海/广州/呼和浩特/包头)">
+                <input id="to" placeholder="目的地">
+                <input type="date" id="ticketDate">
+                <button onclick="searchTicket()">查询余票</button>
+            </div>
+            <div class="box">
+                <h3>📋 车次信息</h3>
+                <div class="result" id="ticketResult">
+                    推荐车次:<br>
+                    G2453 呼和浩特东→北京北 08:00-10:33 二等¥215 余48<br>
+                    G101 北京南→上海虹桥 08:30-13:15 二等¥553 余32<br>
+                    G85 上海虹桥→广州南 08:00-14:36 二等¥793 余21
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能引导 - 不变 -->
+    <div id="guide" class="page">
+        <h2>🗺️ 站内智能导航</h2>
+        <div class="page-grid">
+            <div class="box">
+                <h3><i class="fa-solid fa-draw-polygon"></i> 车站数字地图</h3>
+                <div class="map"><canvas id="guideCanvas" width="800" height="360" style="width:100%; height:100%;"></canvas></div>
+                <div style="margin-top:12px; display:flex; gap:12px; flex-wrap:wrap;">
+                    <button onclick="startGuide('gateA')"><i class="fa-solid fa-location-dot"></i> 导航到A12检票口</button>
+                    <button onclick="startGuide('gateB')"><i class="fa-solid fa-location-dot"></i> 导航到B12检票口</button>
+                    <button onclick="startGuide('service')"><i class="fa-solid fa-headset"></i> 导航到服务中心</button>
+                    <button onclick="resetMapHighlight()"><i class="fa-regular fa-map"></i> 重置地图</button>
+                </div>
+            </div>
+            <div class="box">
+                <h3>🚶 导航指引</h3>
+                <button onclick="voiceGuideInfo()"><i class="fa-solid fa-ear-listen"></i> 语音导航播报</button>
+                <div class="result" id="guideResult">
+                    🟢 当前位于：东进站口<br>
+                    可选择目的地：A12检票口(280m)、B12检票口(320m)、服务中心(200m)<br>
+                    点击上方按钮开始导航
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 正晚点查询 - 大幅增加车次 -->
+    <div id="delay" class="page">
+        <h2>⏱️ 正晚点查询</h2>
+        <div class="page-grid">
+            <div class="box">
+                <h3>车次查询</h3>
+                <input id="trainNo" placeholder="车次 (如 G101, G2453, D1072, G85)">
+                <button onclick="checkDelay()">查询状态</button>
+            </div>
+            <div class="box">
+                <h3>运行实况</h3>
+                <div class="result" id="delayResult">
+                    示例：G2453 正点运行 下一站:张家口<br>
+                    G101 正点 即将到达南京南<br>
+                    G85 晚点6分钟 因设备故障<br>
+                    D1072 正点 即将到达呼和浩特东
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 服务预约 -->
+    <div id="reserve" class="page">
+        <h2>📅 重点服务预约</h2>
+        <div class="page-grid">
+            <div class="box">
+                <h3>服务类型</h3>
+                <select id="service">
+                    <option>轮椅服务</option><option>重点旅客服务</option><option>儿童托管</option>
+                    <option>行李托运</option><option>商务座贵宾接待</option><option>遗失物品登记</option>
+                </select>
+                <button onclick="reserve()">立即预约</button>
+            </div>
+            <div class="box">
+                <h3>预约凭证</h3>
+                <div class="result" id="reserveResult">暂无预约，选择服务后预约</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 人流统计 -->
+    <div id="traffic" class="page">
+        <h2>📊 实时客流热力</h2>
+        <div class="page-grid">
+            <div class="box">
+                <h3>区域饱和度</h3>
+                <div class="result" id="trafficStaticData"></div>
+                <div class="chart-container">
+                    <canvas id="trafficChart" width="400" height="250" style="width:100%; max-height:280px;"></canvas>
+                </div>
+            </div>
+            <div class="box">
+                <h3>动态监测</h3>
+                <button onclick="refreshTrafficData()"><i class="fa-solid fa-chart-simple"></i> 刷新实时数据</button>
+                <div class="result" id="trafficResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 列车大屏 - 扩充全国车次，保留内蒙车次 -->
+    <div id="screen" class="page">
+        <h2>🚆 列车动态大屏</h2>
+        <div class="train-screen" id="trainScreen"></div>
+        <div style="margin-top:15px; text-align:center;">
+            <button onclick="refreshTrainScreen()"><i class="fa-solid fa-rotate-right"></i> 刷新大屏数据</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 全局变量 ----------
+    let currentHighlight = false;
+    let currentTargetGate = 'gateA';
+    let canvasMap = null, ctx = null;
+    let trafficChart = null;
+    const MAP_IMAGE_URL = 'images/station_map.jpg';
+    let mapBgImage = new Image();
+    let bgReady = false;
+
+    // 站点数据
+    const stations = [
+        { name: "东进站口", key: "enter", x: 80, y: 280, type: "entry" },
+        { name: "安检区", key: "security", x: 220, y: 260, type: "service" },
+        { name: "售票厅", key: "ticket", x: 150, y: 140, type: "service" },
+        { name: "中央候车厅", key: "hall", x: 420, y: 190, type: "hall" },
+        { name: "A12检票口", key: "gateA", x: 640, y: 280, type: "gate" },
+        { name: "B12检票口", key: "gateB", x: 680, y: 120, type: "gate" },
+        { name: "服务中心", key: "service", x: 510, y: 320, type: "info" },
+        { name: "西进站口", key: "west", x: 40, y: 60, type: "entry" }
+    ];
+    const routes = [
+        { from: "enter", to: "security" }, { from: "security", to: "hall" },
+        { from: "ticket", to: "security" }, { from: "hall", to: "gateA" },
+        { from: "hall", to: "gateB" }, { from: "west", to: "hall" },
+        { from: "service", to: "hall" }, { from: "enter", to: "ticket" },
+        { from: "security", to: "service" }
+    ];
+    const pathMap = {
+        gateA: ["enter", "security", "hall", "gateA"],
+        gateB: ["enter", "security", "hall", "gateB"],
+        service: ["enter", "security", "service"]
+    };
+
+    // ================= 车票数据库（完整保留原6组 + 内蒙古 + 更多）=================
+    const ticketDB = {
+        // 原6组核心线路
+        "北京南→上海虹桥": { trains: [{no:"G101",dep:"08:30",arr:"13:15",price:553,remain:32},{no:"G105",dep:"09:00",arr:"13:50",price:553,remain:18}] },
+        "北京南→南京南": { trains: [{no:"G123",dep:"10:12",arr:"15:04",price:538,remain:16},{no:"G137",dep:"11:30",arr:"16:22",price:538,remain:7}] },
+        "北京→深圳北": { trains: [{no:"D705",dep:"19:00",arr:"07:31",price:980,remain:24},{no:"G71",dep:"08:00",arr:"18:00",price:936,remain:5}] },
+        "上海虹桥→广州南": { trains: [{no:"G85",dep:"08:00",arr:"14:36",price:793,remain:21},{no:"G1305",dep:"10:00",arr:"16:30",price:793,remain:9}] },
+        "成都东→西安北": { trains: [{no:"D1918",dep:"07:30",arr:"11:30",price:263,remain:45},{no:"G2204",dep:"08:30",arr:"12:00",price:295,remain:30}] },
+        "武汉→长沙南": { trains: [{no:"G1001",dep:"09:00",arr:"10:20",price:164,remain:52}] },
+        // 内蒙古方向（保留）
+        "北京北→呼和浩特东": { trains: [{no:"G2453",dep:"08:00",arr:"10:33",price:215,remain:48},{no:"G2457",dep:"12:00",arr:"14:33",price:215,remain:32}] },
+        "呼和浩特东→北京北": { trains: [{no:"G2454",dep:"09:30",arr:"12:03",price:215,remain:55},{no:"G2458",dep:"14:00",arr:"16:33",price:215,remain:28}] },
+        "北京北→包头": { trains: [{no:"G2495",dep:"09:20",arr:"12:58",price:238,remain:27},{no:"G2499",dep:"15:30",arr:"19:08",price:238,remain:15}] },
+        "包头→北京北": { trains: [{no:"G2496",dep:"08:10",arr:"11:48",price:238,remain:33},{no:"G2500",dep:"13:00",arr:"16:38",price:238,remain:21}] },
+        "呼和浩特东→包头": { trains: [{no:"D1072",dep:"07:30",arr:"08:45",price:68,remain:32},{no:"D1074",dep:"11:20",arr:"12:35",price:68,remain:46}] },
+        "包头→呼和浩特东": { trains: [{no:"D1071",dep:"06:50",arr:"08:05",price:68,remain:29},{no:"D1073",dep:"10:30",arr:"11:45",price:68,remain:41}] },
+        "呼和浩特东→鄂尔多斯": { trains: [{no:"D6961",dep:"08:30",arr:"10:10",price:98,remain:64},{no:"D6963",dep:"13:20",arr:"15:00",price:98,remain:52}] },
+        "鄂尔多斯→呼和浩特东": { trains: [{no:"D6962",dep:"09:00",arr:"10:40",price:98,remain:58},{no:"D6964",dep:"14:00",arr:"15:40",price:98,remain:47}] },
+        "上海虹桥→呼和浩特东": { trains: [{no:"G378",dep:"09:50",arr:"20:03",price:736,remain:12}] },
+        "广州南→包头": { trains: [{no:"G386",dep:"07:30",arr:"20:58",price:985,remain:8}] },
+        // 新增更多全国线路
+        "广州南→北京西": { trains: [{no:"G80",dep:"09:00",arr:"17:00",price:862,remain:24}] },
+        "西安北→成都东": { trains: [{no:"D1935",dep:"14:00",arr:"17:45",price:263,remain:38}] }
+    };
+    function searchTicket() {
+        let from = document.getElementById("from").value.trim() || "北京北";
+        let to = document.getElementById("to").value.trim() || "呼和浩特东";
+        let key = `${from}→${to}`;
+        let data = ticketDB[key];
+        if(!data) {
+            document.getElementById("ticketResult").innerHTML = `未找到 ${from} → ${to} 的车次，试试其他城市组合。`;
+            return;
+        }
+        let html = `🎟️ ${from} → ${to} 车次:<br>`;
+        data.trains.forEach(t => {
+            html += `${t.no} ${from}→${to} ${t.dep}-${t.arr} 二等座 ¥${t.price} 余${t.remain}张<br>`;
+        });
+        document.getElementById("ticketResult").innerHTML = html;
+    }
+
+    // ================= 正晚点数据库（大幅扩充至25+车次）=================
+    const delayDB = {
+        // 内蒙古方向（保留并增加）
+        "G2453": { status:"正点", next:"张家口", info:"正点运行，预计10:33到达呼和浩特东" },
+        "G2457": { status:"正点", next:"乌兰察布", info:"运行正常" },
+        "G2495": { status:"晚点3分钟", next:"张家口", info:"因客流较大晚点3分钟" },
+        "G2499": { status:"正点", next:"乌兰察布", info:"正点" },
+        "D1072": { status:"正点", next:"呼和浩特东", info:"即将到达" },
+        "D1074": { status:"晚点5分钟", next:"包头东", info:"设备检修导致晚点" },
+        "G378": { status:"正点", next:"石家庄", info:"正点运行" },
+        "K7923": { status:"正点", next:"包头", info:"普速列车，运行平稳" },
+        "G2454": { status:"正点", next:"北京北", info:"运行正常" },
+        "G2458": { status:"晚点2分钟", next:"北京北", info:"轻微晚点" },
+        "G2496": { status:"正点", next:"北京北", info:"正点" },
+        "G2500": { status:"晚点4分钟", next:"北京北", info:"因天气原因晚点" },
+        "D1071": { status:"正点", next:"包头", info:"即将发车" },
+        "D1073": { status:"正点", next:"包头", info:"运行正常" },
+        "D6961": { status:"正点", next:"鄂尔多斯", info:"正点" },
+        "D6963": { status:"晚点6分钟", next:"鄂尔多斯", info:"线路检修导致晚点" },
+        // 全国主要线路
+        "G101": { status:"正点", next:"南京南", info:"正点运行，预计13:15到达上海虹桥" },
+        "G105": { status:"晚点1分钟", next:"济南西", info:"轻微晚点" },
+        "G123": { status:"晚点5分钟", next:"徐州东", info:"晚点5分钟，预计14:20到达" },
+        "G137": { status:"正点", next:"南京南", info:"运行正常" },
+        "D705": { status:"正点", next:"终点站", info:"即将发车" },
+        "G71": { status:"晚点10分", next:"石家庄", info:"设备检修导致晚点" },
+        "G85": { status:"晚点6分钟", next:"长沙南", info:"设备故障导致晚点6分钟" },
+        "G1305": { status:"正点", next:"广州南", info:"正点运行" },
+        "D1918": { status:"正点", next:"西安北", info:"运行平稳" },
+        "G2204": { status:"正点", next:"西安北", info:"正点" },
+        "G1001": { status:"正点", next:"岳阳东", info:"正点" },
+        "G80": { status:"正点", next:"武汉", info:"运行正常" },
+        "G386": { status:"正点", next:"郑州东", info:"正点" }
+    };
+    function checkDelay() {
+        let train = document.getElementById("trainNo").value.trim().toUpperCase() || "G2453";
+        let info = delayDB[train];
+        if(!info) info = { status:"查询不到", next:"--", info:"请检查车次，支持G101/G2453/D1072/G85等" };
+        document.getElementById("delayResult").innerHTML = `${train} 当前状态：${info.status}<br>下一站：${info.next}<br>详细信息：${info.info}`;
+    }
+
+    // 人流统计（7个区域）- 动态建议入口
+    let trafficLabels = ["东入口", "西入口", "候车厅", "A区检票口", "B区检票口", "商业区", "卫生间区域"];
+    let trafficValues = [1280, 620, 2450, 850, 460, 320, 210];
+    function initTrafficChart() {
+        const canvas = document.getElementById('trafficChart');
+        if(!canvas) return;
+        if(trafficChart) trafficChart.destroy();
+        trafficChart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: trafficLabels,
+                datasets: [{
+                    label: '实时人数 (人)', data: trafficValues,
+                    backgroundColor: 'rgba(0,170,255,0.7)', borderColor: '#00ccff', borderWidth: 2, borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: { legend: { labels: { color: '#eef5ff' } }, tooltip: { backgroundColor: '#0a1a2c' } },
+                scales: { y: { beginAtZero: true, grid: { color: '#2c6e9e' }, ticks: { color: '#fff' } },
+                           x: { ticks: { color: '#fff', font: { weight:'bold' } } } }
+            }
+        });
+        updateTrafficDisplay();
+    }
+    function updateTrafficDisplay() {
+        if(trafficChart) { trafficChart.data.datasets[0].data = trafficValues; trafficChart.update(); }
+        const staticDiv = document.getElementById('trafficStaticData');
+        if(staticDiv) {
+            staticDiv.innerHTML = trafficLabels.map((l,i)=> `${l}:${trafficValues[i]}人 ${i==2?(trafficValues[i]>2000?'高峰':''):''}`).join('<br>');
+        }
+        const total = trafficValues.reduce((a,b)=>a+b,0);
+        let east = trafficValues[0];
+        let west = trafficValues[1];
+        let suggest = east <= west ? "东入口" : "西入口";
+        document.getElementById('trafficResult').innerHTML = `当前站内总人数：${total} 人<br>高峰区域：${trafficValues[2]>2000?'候车厅拥挤':(trafficValues[0]>1200?'东入口较挤':'客流平稳')}<br>建议从${suggest}进站，以节省排队时间。`;
+    }
+    function refreshTrafficData() {
+        trafficValues = [
+            Math.floor(Math.random()*800+800), Math.floor(Math.random()*600+400),
+            Math.floor(Math.random()*1200+1800), Math.floor(Math.random()*600+500),
+            Math.floor(Math.random()*500+300), Math.floor(Math.random()*300+150),
+            Math.floor(Math.random()*200+80)
+        ];
+        updateTrafficDisplay();
+    }
+
+    // 列车大屏数据（包含内蒙及全国车次，共12趟，状态多样）
+    let trainScreenData = [
+        { no:"G2453", dest:"呼和浩特东", time:"08:00", platform:"3", status:"正在检票" },
+        { no:"D1072", dest:"包头", time:"07:30", platform:"2", status:"已发车" },
+        { no:"G2495", dest:"包头", time:"09:20", platform:"5", status:"候车中" },
+        { no:"G2457", dest:"呼和浩特东", time:"12:00", platform:"4", status:"正点" },
+        { no:"D1074", dest:"包头", time:"11:20", platform:"6", status:"晚点5分" },
+        { no:"G378", dest:"呼和浩特东", time:"09:50", platform:"1", status:"正点" },
+        { no:"G101", dest:"上海虹桥", time:"08:30", platform:"3", status:"正在检票" },
+        { no:"G85", dest:"广州南", time:"08:00", platform:"8", status:"晚点6分" },
+        { no:"D705", dest:"深圳北", time:"19:00", platform:"1", status:"候车中" },
+        { no:"G123", dest:"南京南", time:"10:12", platform:"5", status:"晚点5分" },
+        { no:"D1918", dest:"西安北", time:"07:30", platform:"6", status:"停止检票" },
+        { no:"G1001", dest:"长沙南", time:"09:00", platform:"7", status:"正点" }
+    ];
+    function renderTrainScreen() {
+        let html = `<div class="screen-header"><div>车次</div><div>终点站</div><div>发车时间</div><div>站台</div><div>状态</div></div>`;
+        trainScreenData.forEach(t => {
+            html += `<div class="screen-row"><div>${t.no}</div><div>${t.dest}</div><div>${t.time}</div><div>${t.platform}站台</div><div>${t.status}</div></div>`;
+        });
+        document.getElementById('trainScreen').innerHTML = html;
+    }
+    function refreshTrainScreen() {
+        trainScreenData = trainScreenData.map(t => {
+            let r = Math.random();
+            if(r<0.3) t.status = ["正点","晚点"+Math.floor(Math.random()*20)+"分","停止检票","候车中","正在检票"][Math.floor(Math.random()*5)];
+            return t;
+        });
+        renderTrainScreen();
+    }
+
+    // 语音播报（保留原增强版）
+    function getRealTimeBroadcast() {
+        const now = new Date();
+        const hour = now.getHours();
+        let timeContext = "";
+        if (hour < 9) timeContext = "早高峰期间，";
+        else if (hour < 12) timeContext = "上午出行时段，";
+        else if (hour < 14) timeContext = "午间客流较大，";
+        else if (hour < 18) timeContext = "下午时段，";
+        else timeContext = "晚间时段，";
+
+        const broadcasts = [
+            `各位旅客请注意，${timeContext}开往呼和浩特东的G2453次列车已经开始检票，请前往3号检票口乘车。`,
+            `车站广播：${timeContext}开往包头的D1072次列车即将停止检票，请抓紧时间上车。`,
+            `温馨提示：${timeContext}站内客流量较大，请照看好随身物品，照顾好老人和儿童。`,
+            `遗失物品的旅客请到服务中心登记，近期有旅客遗失身份证、背包等物品。`,
+            `开往北京北方向的G2454次列车正点运行，预计12:03到达，请候车旅客留意大屏信息。`,
+            `紧急通知：G2495次列车因设备检修晚点3分钟，请您耐心等候，给您带来不便敬请谅解。`,
+            `智慧车站提醒您：${timeContext}候车厅东侧设有母婴室和无障碍卫生间，有需要的旅客可前往使用。`,
+            `欢迎乘坐草原高铁，本次列车由呼和浩特东开往包头，全程运行约1小时15分，祝您旅途愉快。`
+        ];
+        let idx = Math.floor(Math.random() * broadcasts.length);
+        return broadcasts[idx];
+    }
+    function voiceBroadcast() {
+        let msgText = getRealTimeBroadcast();
+        let msg = new SpeechSynthesisUtterance(msgText);
+        msg.lang = "zh-CN";
+        msg.rate = 0.9;
+        speechSynthesis.speak(msg);
+        console.log("🎙️ 广播：" + msgText);
+    }
+
+    // 智能引导地图（保持不变）
+    function loadMapBackground() {
+        mapBgImage.onload = () => { bgReady=true; if(window.drawMapAdaptive) window.drawMapAdaptive(currentHighlight); };
+        mapBgImage.onerror = () => { bgReady=false; if(window.drawMapAdaptive) window.drawMapAdaptive(currentHighlight); };
+        mapBgImage.src = MAP_IMAGE_URL;
+    }
+    function initGuideMap() {
+        const canvas = document.getElementById("guideCanvas");
+        if(!canvas) return;
+        const container = canvas.parentElement;
+        const w = container.clientWidth>100?container.clientWidth:800;
+        canvas.width = w; canvas.height = 340;
+        canvasMap = canvas; ctx = canvas.getContext("2d");
+        const adaptiveDraw = (highlight) => {
+            if(!ctx) return;
+            const ww = canvas.width, hh = canvas.height;
+            const sx = ww/800, sy = hh/360;
+            ctx.clearRect(0,0,ww,hh);
+            if(bgReady && mapBgImage.complete) ctx.drawImage(mapBgImage,0,0,ww,hh);
+            else { ctx.fillStyle="#071a2b"; ctx.fillRect(0,0,ww,hh); }
+            let pathKeys = pathMap[currentTargetGate] || pathMap.gateA;
+            for(let r of routes) {
+                let fromP = stations.find(s=>s.key===r.from), toP = stations.find(s=>s.key===r.to);
+                if(fromP && toP) {
+                    let x1=fromP.x*sx,y1=fromP.y*sy,x2=toP.x*sx,y2=toP.y*sy;
+                    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+                    let isHigh = highlight && pathKeys.includes(r.from) && pathKeys.includes(r.to);
+                    if(isHigh) { ctx.strokeStyle="#ffcc44"; ctx.lineWidth=7; ctx.shadowBlur=12; ctx.stroke();
+                                 ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+                                 ctx.strokeStyle="#fff9c4"; ctx.lineWidth=3; ctx.setLineDash([8,10]); ctx.stroke(); ctx.setLineDash([]); }
+                    else { ctx.strokeStyle="#2d9cdb"; ctx.lineWidth=3.5; ctx.stroke(); }
+                }
+            }
+            ctx.shadowBlur=0;
+            for(let s of stations) {
+                let x=s.x*sx,y=s.y*sy, onPath = highlight && pathKeys.includes(s.key);
+                ctx.beginPath(); ctx.arc(x,y,16,0,2*Math.PI); ctx.fillStyle=onPath?"#ffb347":"#1e5b8a"; ctx.fill();
+                ctx.strokeStyle="#fff"; ctx.lineWidth=2.5; ctx.stroke();
+                ctx.beginPath(); ctx.arc(x,y,9,0,2*Math.PI); ctx.fillStyle=onPath?"#ff9100":"#0f3d5e"; ctx.fill();
+                ctx.font=`${Math.max(16,sx*18)}px "Segoe UI Emoji"`; let icon={entry:"🚪",gate:"🚉",hall:"🏛️"}[s.type]||"🛎️";
+                ctx.fillStyle="#fff"; ctx.fillText(icon,x-12,y-12);
+                ctx.font=`bold ${Math.max(11,sx*13)}px "微软雅黑"`; ctx.fillStyle="#fff"; ctx.shadowBlur=3; ctx.fillText(s.name,x-22,y+24);
+                ctx.shadowBlur=0;
+            }
+            ctx.font="bold 15px '微软雅黑'"; ctx.fillStyle=highlight?"#FFE484":"#c0e4ff"; ctx.fillText(highlight?`✨ 导航到${stations.find(s=>s.key===currentTargetGate)?.name} ✨`:"🚄 点击按钮选择目的地",15,35);
+        };
+        window.drawMapAdaptive = adaptiveDraw;
+        adaptiveDraw(currentHighlight);
+        window.addEventListener("resize", ()=>{ if(document.getElementById("guide").classList.contains("active")){ canvas.width=container.clientWidth; canvas.height=340; adaptiveDraw(currentHighlight); } });
+    }
+    function startGuide(target) {
+        currentTargetGate = target;
+        currentHighlight = true;
+        if(window.drawMapAdaptive) window.drawMapAdaptive(true);
+        let targetName = stations.find(s=>s.key===target)?.name || "目的地";
+        let dist = {gateA:"280米",gateB:"320米",service:"200米"}[target] || "未知";
+        document.getElementById("guideResult").innerHTML = `<i class="fa-solid fa-route"></i> 导航已启动 → ${targetName}<br>路径: 东进站口 → 安检区 → 候车厅 → ${targetName}<br>距离约${dist}，步行约${target==='service'?'2分钟':'4分钟'}<br>沿途有指引标识。`;
+    }
+    function resetMapHighlight() { currentHighlight=false; if(window.drawMapAdaptive) window.drawMapAdaptive(false); document.getElementById("guideResult").innerHTML="🟢 当前位于：东进站口<br>可选择目的地：A12检票口(280m)、B12检票口(320m)、服务中心(200m)<br>点击上方按钮开始导航"; }
+    function voiceGuideInfo() { let msg=new SpeechSynthesisUtterance("智慧车站为您导航，请跟随地图指引。"); msg.lang="zh-CN"; speechSynthesis.speak(msg); }
+
+    // 登录与页面切换
+    function login() {
+        let user = document.getElementById("username").value, pass = document.getElementById("password").value;
+        if(user==="admin" && pass==="123456"){
+            document.getElementById("loginPage").style.display="none";
+            document.getElementById("mainSystem").style.display="block";
+            loadMapBackground(); initGuideMap(); initTrafficChart(); renderTrainScreen();
+            setInterval(()=>{ document.getElementById("time") && (document.getElementById("time").innerHTML = "⏰ "+new Date().toLocaleString()); },1000);
+        } else document.getElementById("loginMsg").innerHTML = "账号或密码错误 (admin / 123456)";
+    }
+    function showPage(id) {
+        document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+        if(id==="guide" && window.drawMapAdaptive) setTimeout(()=>window.drawMapAdaptive(currentHighlight),60);
+        if(id==="traffic" && trafficChart) setTimeout(()=>trafficChart.resize(),80);
+        if(id==="screen") renderTrainScreen();
+    }
+    function reserve() { let svc=document.getElementById("service").value; document.getElementById("reserveResult").innerHTML=`✅ 成功预约 ${svc}<br>时间：今日15:30前，地点：东广场服务中心，工号3102已接单`; }
+    function toggleElder() { document.body.classList.toggle("elder"); }
+</script>
+</body>
+</html>
